@@ -1162,7 +1162,10 @@ public class NotificationManagerService extends INotificationManager.Stub
             boolean queryRemove = false;
             boolean packageChanged = false;
             boolean cancelNotifications = true;
-            
+
+            boolean ScreenOnNotificationLed = Settings.System.getInt(mContext.getContentResolver(),
+                Settings.System.SCREEN_ON_NOTIFICATION_LED, 0) == 1;
+
             if (action.equals(Intent.ACTION_PACKAGE_ADDED)
                     || (queryRemove=action.equals(Intent.ACTION_PACKAGE_REMOVED))
                     || action.equals(Intent.ACTION_PACKAGE_RESTARTED)
@@ -1247,7 +1250,9 @@ public class NotificationManagerService extends INotificationManager.Stub
                 }
             } else if (action.equals(Intent.ACTION_USER_PRESENT)) {
                 // turn off LED when user passes through lock screen
-                mNotificationLight.turnOff();
+                if (!ScreenOnNotificationLed) {
+                    mNotificationLight.turnOff();
+                }
             } else if (action.equals(Intent.ACTION_USER_SWITCHED)) {
                 // reload per-user settings
                 mSettingsObserver.update(null);
@@ -2291,6 +2296,9 @@ public class NotificationManagerService extends INotificationManager.Stub
     // lock on mNotificationList
     private void updateLightsLocked()
     {
+        boolean ScreenOnNotificationLed = Settings.System.getInt(mContext.getContentResolver(),
+                Settings.System.SCREEN_ON_NOTIFICATION_LED, 0) == 1;
+
         // handle notification lights
         if (mLedNotification == null) {
             // get next notification, if any
@@ -2300,8 +2308,10 @@ public class NotificationManagerService extends INotificationManager.Stub
             }
         }
 
-        // Don't flash while we are in a call or screen is on
-        if (mLedNotification == null || mInCall || mScreenOn) {
+
+        // Don't flash while we are in a call or screen is on or its disabled
+        if (mLedNotification == null || mInCall || (mScreenOn && (!ScreenOnNotificationLed)) || !mNotificationPulseEnabled)
+           {
             mNotificationLight.turnOff();
         } else {
             final Notification ledno = mLedNotification.sbn.getNotification();
