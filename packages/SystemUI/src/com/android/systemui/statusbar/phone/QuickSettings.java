@@ -668,6 +668,34 @@ class QuickSettings {
             parent.addView(powermenuTile);
         }
 
+        // Torch
+        if (mModel.deviceSupportsLed()) {
+            final QuickSettingsBasicTile torchTile = new QuickSettingsBasicTile(mContext);
+            torchTile.setImageResource(R.drawable.ic_qs_torch);
+            torchTile.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent intent = new Intent("net.cactii.flash2.TOGGLE_FLASHLIGHT");
+                    mContext.sendBroadcast(intent);
+                }
+            });
+            if (LONG_PRESS_TOGGLES) {
+                torchTile.setOnLongClickListener(new View.OnLongClickListener() {
+                    @Override
+                    public boolean onLongClick(View v) {
+                        getService().animateCollapsePanels();
+                        Intent intent = new Intent(Intent.ACTION_MAIN);
+                        intent.setClassName("net.cactii.flash2", "net.cactii.flash2.MainActivity");
+                        startSettingsActivity(intent);
+                        return true;
+                    }
+                });
+                mModel.addTorchTile(torchTile,
+                        new QuickSettingsModel.BasicRefreshCallback(torchTile));
+                parent.addView(torchTile);
+            }
+        }
+
         // Screen off
         final QuickSettingsBasicTile screenoffTile = new QuickSettingsBasicTile(mContext);
         screenoffTile.setImageResource(R.drawable.ic_qs_screen_off);

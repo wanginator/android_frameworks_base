@@ -276,6 +276,10 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
     private RefreshCallback mPowerMenuCallback;
     private State mPowerMenuState = new State();
 
+    private QuickSettingsTileView mTorchTile;
+    private RefreshCallback mTorchCallback;
+    private State mTorchState = new State();
+
     private QuickSettingsTileView mScreenOffTile;
     private RefreshCallback mScreenOffCallback;
     private State mScreenOffState = new State();
@@ -320,6 +324,7 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
         refreshRssiTile();
         refreshLocationTile();
         refreshPowerMenuTile();
+        refreshTorchTile();
         refreshScreenOffTile();
     }
 
@@ -818,6 +823,24 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
         Resources r = mContext.getResources();
         mPowerMenuState.label = r.getString(R.string.quick_settings_power_menu_label);
         mPowerMenuCallback.refreshView(mPowerMenuTile, mPowerMenuState);
+    }
+
+    // Torch
+    // show torch tile only on device with flash
+    boolean deviceSupportsLed() {
+        PackageManager pm = mContext.getPackageManager();
+        return pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
+    }
+
+    void addTorchTile(QuickSettingsTileView view, RefreshCallback cb) {
+        mTorchTile = view;
+        mTorchCallback = cb;
+        refreshTorchTile();
+    }
+    void refreshTorchTile() {
+        Resources r = mContext.getResources();
+        mTorchState.label = r.getString(R.string.quick_settings_torch_label);
+        mTorchCallback.refreshView(mTorchTile, mTorchState);
     }
 
     // Screen Off
