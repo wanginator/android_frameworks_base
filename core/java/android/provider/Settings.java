@@ -2495,10 +2495,20 @@ public final class Settings {
         public static final String VOLUME_ADJUST_SOUNDS_ENABLED = "volume_adjust_sounds_enabled";
 
         /**
+
          * I am the lolrus.
          * <p>
          * Nonzero values indicate that the user has a bukkit.
          * Backward-compatible with <code>PrefGetPreference(prefAllowEasterEggs)</code>.
+
+         * Whether power menu screen record is enabled
+         * @hide
+         */
+        public static final String POWER_MENU_SCREENRECORD_ENABLED = "power_menu_screenrecord_enabled";
+
+        /**
+         * Enable Stylus Gestures
+         *
          * @hide
          */
         public static final String EGG_MODE = "egg_mode";
