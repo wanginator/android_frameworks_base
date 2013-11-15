@@ -321,7 +321,6 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
                         return true;
                     }
                 });
-        
 
         // next: airplane mode
         mItems.add(mAirplaneModeOn);
@@ -541,7 +540,6 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
             }
         }
     }
-
 
     private void toggleScreenRecord() {
         final Intent recordIntent = new Intent("org.chameleonos.action.NOTIFY_RECORD_SERVICE");

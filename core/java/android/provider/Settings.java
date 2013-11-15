@@ -2520,7 +2520,15 @@ public final class Settings {
          public static final String LOCKSCREEN_SEE_THROUGH = "lockscreen_see_through";         
 
         /**
-         * Boolean value whether to link ringtone and notification volumes
+
+         * Whether power menu screen record is enabled
+         * @hide
+         */
+        public static final String POWER_MENU_SCREENRECORD_ENABLED = "power_menu_screenrecord_enabled";
+
+        /**
+         * Enable Stylus Gestures
+         *
          * @hide
          */
         public static final String VOLUME_LINK_NOTIFICATION = "volume_link_notification";
