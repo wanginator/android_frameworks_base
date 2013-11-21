@@ -265,9 +265,11 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
     Runnable mPostCollapseCleanup = null;
 
     // status bar brightness control
-    private boolean mBrightnessControl = true;
+    private boolean mBrightnessControl;
     private float mScreenWidth;
     private int mMinBrightness;
+    private int mPeekHeight;
+    private boolean mJustPeeked;
     int mLinger;
     int mInitialTouchX;
     int mInitialTouchY;
@@ -297,7 +299,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
         }
     };
 
-    // status bra brightness control
+    // status bar brightness control
     Runnable mLongPressBrightnessChange = new Runnable() {
         @Override
         public void run() {
@@ -709,8 +711,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
 
         // listen for USER_SETUP_COMPLETE setting (per-user)
         resetUserSetupObserver();
-
-        mVelocityTracker = VelocityTracker.obtain();
 
         return mStatusBarView;
     }
@@ -1916,51 +1916,48 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
                         Settings.System.SCREEN_BRIGHTNESS, newBrightness);
             }
         } catch (RemoteException e) {
-            Slog.w(TAG, "Setting Brightness failed: " + e);
+            Log.w(TAG, "Setting Brightness failed: " + e);
         }
     }
 
-    private void brightnessControl(MotionEvent event)
-    {
-        if (mBrightnessControl)
-        {
-            final int action = event.getAction();
-            final int x = (int)event.getRawX();
-            final int y = (int)event.getRawY();
-            if (action == MotionEvent.ACTION_DOWN) {
+    private void brightnessControl(MotionEvent event) {
+        final int action = event.getAction();
+        final int x = (int) event.getRawX();
+        final int y = (int) event.getRawY();
+        if (action == MotionEvent.ACTION_DOWN) {
+            if (y < mNotificationHeaderHeight) {
                 mLinger = 0;
                 mInitialTouchX = x;
                 mInitialTouchY = y;
+                mJustPeeked = true;
                 mHandler.removeCallbacks(mLongPressBrightnessChange);
-                if ((y) < mNotificationHeaderHeight) {
-                    mHandler.postDelayed(mLongPressBrightnessChange,
-                            BRIGHTNESS_CONTROL_LONG_PRESS_TIMEOUT);
-                }
-            } else if (action == MotionEvent.ACTION_MOVE) {
-                if ((y) < mNotificationHeaderHeight) {
-                    mVelocityTracker.computeCurrentVelocity(1000);
-                    float yVel = mVelocityTracker.getYVelocity();
-                    yVel = Math.abs(yVel);
-                    if (yVel < 50.0f) {
-                        if (mLinger > BRIGHTNESS_CONTROL_LINGER_THRESHOLD) {
-                            adjustBrightness(x);
-                        } else {
-                            mLinger++;
-                        }
+                mHandler.postDelayed(mLongPressBrightnessChange,
+                        BRIGHTNESS_CONTROL_LONG_PRESS_TIMEOUT);
+            }
+        } else if (action == MotionEvent.ACTION_MOVE) {
+            if (y < mNotificationHeaderHeight && mJustPeeked) {
+                if (mLinger > BRIGHTNESS_CONTROL_LINGER_THRESHOLD) {
+                    adjustBrightness(x);
+                } else {
+                    final int xDiff = Math.abs(x - mInitialTouchX);
+                    final int yDiff = Math.abs(y - mInitialTouchY);
+                    final int touchSlop = ViewConfiguration.get(mContext).getScaledTouchSlop();
+                    if (xDiff > yDiff) {
+                        mLinger++;
                     }
-                    int touchSlop = ViewConfiguration.get(mContext).getScaledTouchSlop();
-                    if (Math.abs(x - mInitialTouchX) > touchSlop ||
-                            Math.abs(y - mInitialTouchY) > touchSlop) {
+                    if (xDiff > touchSlop || yDiff > touchSlop) {
                         mHandler.removeCallbacks(mLongPressBrightnessChange);
                     }
-                } else {
-                    mHandler.removeCallbacks(mLongPressBrightnessChange);
                 }
-            } else if (action == MotionEvent.ACTION_UP
-                    || action == MotionEvent.ACTION_CANCEL) {
+            } else {
+                if (y > mPeekHeight) {
+                    mJustPeeked = false;
+                }
                 mHandler.removeCallbacks(mLongPressBrightnessChange);
-                mLinger = 0;
             }
+        } else if (action == MotionEvent.ACTION_UP
+                || action == MotionEvent.ACTION_CANCEL) {
+            mHandler.removeCallbacks(mLongPressBrightnessChange);
         }
     }
 
@@ -1989,7 +1986,12 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
             mGestureRec.add(event);
         }
 
-        brightnessControl(event);
+        if (mBrightnessControl) {
+            brightnessControl(event);
+            if ((mDisabled & StatusBarManager.DISABLE_EXPAND) != 0) {
+                return true;
+            }
+        }
 
         if (mStatusBarWindowState == WINDOW_STATE_SHOWING) {
             final boolean upOrCancel =
@@ -2815,6 +2817,9 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
         mCarrierLabelHeight = res.getDimensionPixelSize(R.dimen.carrier_label_height);
         mNotificationHeaderHeight = res.getDimensionPixelSize(R.dimen.notification_panel_header_height);
 
+        // status bar brightness control
+        mPeekHeight = res.getDimensionPixelSize(R.dimen.peek_height);
+        
         mNotificationPanelMinHeightFrac = res.getFraction(R.dimen.notification_panel_min_height_frac, 1, 1);
         if (mNotificationPanelMinHeightFrac < 0f || mNotificationPanelMinHeightFrac > 1f) {
             mNotificationPanelMinHeightFrac = 0f;
