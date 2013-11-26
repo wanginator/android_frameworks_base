@@ -678,6 +678,20 @@ class QuickSettings {
             parent.addView(powermenuTile);
         }
 
+        // Screen off
+        final QuickSettingsBasicTile screenoffTile = new QuickSettingsBasicTile(mContext);
+        screenoffTile.setImageResource(R.drawable.ic_qs_screen_off);
+        screenoffTile.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
+                pm.goToSleep(SystemClock.uptimeMillis());
+            }
+        });
+        mModel.addScreenOffTile(screenoffTile,
+                new QuickSettingsModel.BasicRefreshCallback(screenoffTile));
+        parent.addView(screenoffTile);
+
         // Torch
         if (mModel.deviceSupportsLed()) {
             final QuickSettingsBasicTile torchTile = new QuickSettingsBasicTile(mContext);
@@ -703,20 +717,6 @@ class QuickSettings {
                 parent.addView(torchTile);
             }
         }
-
-        // Screen off
-        final QuickSettingsBasicTile screenoffTile = new QuickSettingsBasicTile(mContext);
-        screenoffTile.setImageResource(R.drawable.ic_qs_screen_off);
-        screenoffTile.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
-                pm.goToSleep(SystemClock.uptimeMillis());
-            }
-        });
-            mModel.addScreenOffTile(screenoffTile,
-                    new QuickSettingsModel.BasicRefreshCallback(screenoffTile));
-    parent.addView(screenoffTile);
     }
 
     private void addTemporaryTiles(final ViewGroup parent, final LayoutInflater inflater) {
