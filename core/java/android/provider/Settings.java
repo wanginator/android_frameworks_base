@@ -2583,12 +2583,6 @@ public final class Settings {
         public static final String STATUS_BAR_AM_PM = "status_bar_am_pm";
 
         /**
-         * Whether to show/hide status bar native battery percentage
-         * @hide
-         */
-        public static final String STATUS_BAR_NATIVE_BATTERY_PERCENTAGE = "status_bar_native_battery_percentage";
-
-        /**
          * Custom navring actions
          *
          * @hide
