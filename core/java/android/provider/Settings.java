@@ -2583,17 +2583,6 @@ public final class Settings {
         public static final String STATUS_BAR_AM_PM = "status_bar_am_pm";
 
         /**
-         * Custom navring actions
-         *
-         * @hide
-         */
-        public static final String[] NAVIGATION_RING_TARGETS = new String[] {
-            "navigation_ring_targets_0",
-            "navigation_ring_targets_1",
-            "navigation_ring_targets_2",
-        };
-
-        /**
          * Navigation bar buttons customization
          *
          * @hide
