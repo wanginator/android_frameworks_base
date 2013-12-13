@@ -2976,6 +2976,12 @@ public final class Settings {
         public static final String PEOPLE_LOOKUP_PROVIDER = "people_lookup_provider";
 
         /**
+         * Whether to include audio when recording a video
+         * @hide
+         */
+        public static final String SCREEN_RECORDER_RECORD_AUDIO = "screen_recorder_record_audio";
+
+        /**
          * Settings to backup. This is here so that it's in the same place as the settings
          * keys and easy to update.
          *
