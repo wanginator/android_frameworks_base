@@ -39,6 +39,7 @@
 #include <media/stagefright/MediaErrors.h>
 #include <media/stagefright/MediaMuxer.h>
 #include <media/ICrypto.h>
+#include <media/AudioRecord.h>
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -65,10 +66,14 @@ static const uint32_t kMaxBitRate = 100 * 1000000;  // 100Mbps
 static const uint32_t kMaxTimeLimitSec = 300;       // 5 minutes
 static const uint32_t kFallbackWidth = 1280;        // 720p
 static const uint32_t kFallbackHeight = 720;
+// Audio related
+static const uint32_t kAudioSampleRate = 44100;
+static const uint32_t kSamplesPerFrame = 2048;
 
 static bool gVerbose = false;               // chatty on stdout
 static uint32_t gOrientation = DISPLAY_ORIENTATION_0;    // rotaiton of display
 static bool gSizeSpecified = false;         // was size explicitly requested?
+static bool gRecordAudio = false;           // true if we want to mux in audio from mic
 static uint32_t gVideoWidth = 0;            // default width+height
 static uint32_t gVideoHeight = 0;
 static uint32_t gBitRate = 4000000;         // 4Mbps
@@ -157,46 +162,46 @@ static status_t prepareVideoEncoder(float displayFps,
     looper->setName("screenrecord_looper");
     looper->start();
 
-    ALOGV("Creating codec");
-    sp<MediaCodec> codec = MediaCodec::CreateByType(looper, "video/avc", true);
-    if (codec == NULL) {
+    ALOGV("Creating video codec");
+    sp<MediaCodec> videoCodec = MediaCodec::CreateByType(looper, "video/avc", true);
+    if (videoCodec == NULL) {
         fprintf(stderr, "ERROR: unable to create video/avc codec instance\n");
         return UNKNOWN_ERROR;
     }
-    err = codec->configure(format, NULL, NULL,
+    err = videoCodec->configure(format, NULL, NULL,
             MediaCodec::CONFIGURE_FLAG_ENCODE);
     if (err != NO_ERROR) {
-        codec->release();
-        codec.clear();
+        videoCodec->release();
+        videoCodec.clear();
 
-        fprintf(stderr, "ERROR: unable to configure codec (err=%d)\n", err);
+        fprintf(stderr, "ERROR: unable to configure video codec (err=%d)\n", err);
         return err;
     }
 
     ALOGV("Creating buffer producer");
     sp<IGraphicBufferProducer> bufferProducer;
-    err = codec->createInputSurface(&bufferProducer);
+    err = videoCodec->createInputSurface(&bufferProducer);
     if (err != NO_ERROR) {
-        codec->release();
-        codec.clear();
+        videoCodec->release();
+        videoCodec.clear();
 
         fprintf(stderr,
-            "ERROR: unable to create encoder input surface (err=%d)\n", err);
+            "ERROR: unable to create video encoder input surface (err=%d)\n", err);
         return err;
     }
 
-    ALOGV("Starting codec");
-    err = codec->start();
+    ALOGV("Starting video codec");
+    err = videoCodec->start();
     if (err != NO_ERROR) {
-        codec->release();
-        codec.clear();
+        videoCodec->release();
+        videoCodec.clear();
 
-        fprintf(stderr, "ERROR: unable to start codec (err=%d)\n", err);
+        fprintf(stderr, "ERROR: unable to start video codec (err=%d)\n", err);
         return err;
     }
 
-    ALOGV("Codec prepared");
-    *pCodec = codec;
+    ALOGV("Video codec prepared");
+    *pVideoCodec = videoCodec;
     *pBufferProducer = bufferProducer;
     return 0;
 }
@@ -338,6 +343,36 @@ static status_t prepareVirtualDisplay(const DisplayInfo& mainDpyInfo,
     return NO_ERROR;
 }
 
+// ----------------------------------------------------------------------------
+// returns the minimum required size for the successful creation of an AudioRecord instance.
+// returns 0 if the parameter combination is not supported.
+// return -1 if there was an error querying the buffer size.
+uint32_t getMinBuffSize(uint32_t sampleRateInHertz, uint32_t nbChannels, audio_format_t audioFormat) {
+
+    ALOGD(">> getMinBuffSize(%d, %d, %d)",
+          sampleRateInHertz, nbChannels, audioFormat);
+
+    size_t frameCount = 0;
+    status_t result = AudioRecord::getMinFrameCount(&frameCount,
+            sampleRateInHertz,
+            audioFormat,
+            audio_channel_in_mask_from_count(nbChannels));
+
+    if (result == BAD_VALUE) {
+        return 0;
+    }
+    if (result != NO_ERROR) {
+        return -1;
+    }
+    int bytesPerSample;
+    if(audioFormat == AUDIO_FORMAT_PCM_16_BIT)
+        bytesPerSample = 2;
+    else
+        bytesPerSample = 1;
+
+    return frameCount * nbChannels * bytesPerSample;
+}
+
 /*
  * Runs the MediaCodec encoder, sending the output to the MediaMuxer.  The
  * input frames are coming from the virtual display as fast as SurfaceFlinger
@@ -345,22 +380,71 @@ static status_t prepareVirtualDisplay(const DisplayInfo& mainDpyInfo,
  *
  * The muxer must *not* have been started before calling.
  */
-static status_t runEncoder(const sp<MediaCodec>& encoder,
+static status_t runEncoder(const sp<MediaCodec>& audioEncoder,
+        const sp<MediaCodec>& videoEncoder,
         const sp<MediaMuxer>& muxer) {
-    static int kTimeout = 250000;   // be responsive on signal
+    static int kTimeout = 5000;   // be responsive on signal
     status_t err;
-    ssize_t trackIdx = -1;
+    ssize_t videoTrackIdx = -1;
+    ssize_t audioTrackIdx = -1;
     uint32_t debugNumFrames = 0;
     int64_t startWhenNsec = systemTime(CLOCK_MONOTONIC);
     int64_t endWhenNsec = startWhenNsec + seconds_to_nanoseconds(gTimeLimitSec);
+    uint32_t tracksAdded = 0;
+    int64_t lastAudioPtsUs = 0;
 
     Vector<sp<ABuffer> > buffers;
-    err = encoder->getOutputBuffers(&buffers);
+    err = videoEncoder->getOutputBuffers(&buffers);
     if (err != NO_ERROR) {
         fprintf(stderr, "Unable to get output buffers (err=%d)\n", err);
         return err;
     }
 
+
+    Vector<sp<ABuffer> > audioOutputBuffers;
+    Vector<sp<ABuffer> > audioInputBuffers;
+    sp<AudioRecord> audioRecorder;
+    if (gRecordAudio) {
+        err = audioEncoder->getOutputBuffers(&audioOutputBuffers);
+        if (err != NO_ERROR) {
+            fprintf(stderr, "Unable to get output audio buffers (err=%d)\n", err);
+            return err;
+        }
+
+        err = audioEncoder->getInputBuffers(&audioInputBuffers);
+        if (err != NO_ERROR) {
+            fprintf(stderr, "Unable to get input audio buffers (err=%d)\n", err);
+            return err;
+        }
+
+        // setup AudioRecord so we can source audio data to the audio codec
+        audioRecorder = new AudioRecord();
+        size_t minBuffSize = getMinBuffSize(kAudioSampleRate, 1, AUDIO_FORMAT_PCM_16_BIT);
+        size_t buffSize = kSamplesPerFrame * 10;
+        if (buffSize < minBuffSize) {
+            buffSize = ((minBuffSize / kSamplesPerFrame) + 1) * kSamplesPerFrame * 2;
+        }
+        audioRecorder->set(
+            (audio_source_t) 1,
+            kAudioSampleRate,
+            AUDIO_FORMAT_PCM_16_BIT,        // byte length, PCM
+            (audio_channel_mask_t) 16,
+            buffSize / 2,
+            NULL,// callback_t
+            NULL,// void* user
+            0,             // notificationFrames,
+            false,         // threadCanCallJava
+            0);
+
+        err = audioRecorder->initCheck();
+        if (err != NO_ERROR) {
+            fprintf(stderr,
+                "Error creating AudioRecord instance: initialization check failed (err=%d)\n", err);
+            return err;
+        }
+        audioRecorder->start();
+    }
+>>>>>>> f109bce... Screen recorder: add ability to record audio from mic [1/3]
 
     // This is set by the signal handler.
     gStopRequested = false;
@@ -379,8 +463,26 @@ static status_t runEncoder(const sp<MediaCodec>& encoder,
             break;
         }
 
+        // first lets send some audio off to the audio encoder if enabled
+        if (gRecordAudio) {
+            err = audioEncoder->dequeueInputBuffer(&bufIndex, kTimeout);
+            if (err == NO_ERROR) {
+                ssize_t audioSize = audioRecorder->read(audioInputBuffers[bufIndex]->data(), kSamplesPerFrame);
+                err = audioEncoder->queueInputBuffer(
+                        bufIndex,
+                        0,
+                        audioSize,
+                        systemTime(CLOCK_MONOTONIC) / 1000,
+                        0);
+                ALOGV("Queued %d bytes of audio", audioSize);
+            }
+        }
+
         ALOGV("Calling dequeueOutputBuffer");
-        err = encoder->dequeueOutputBuffer(&bufIndex, &offset, &size, &ptsUsec,&flags, kTimeout);
+
+        err = videoEncoder->dequeueOutputBuffer(&bufIndex, &offset, &size, &ptsUsec,
+                &flags, kTimeout);
+
         ALOGV("dequeueOutputBuffer returned %d", err);
         switch (err) {
         case NO_ERROR:
@@ -392,22 +494,29 @@ static status_t runEncoder(const sp<MediaCodec>& encoder,
                 size = 0;
             }
             if (size != 0) {
+ALOGV("Got data in audio buffer %d, offset=%d, size=%d, pts=%lld",
 
-                ALOGV("Got data in buffer %d, size=%d, pts=%lld",
-                        bufIndex, size, ptsUsec);
-                CHECK(trackIdx != -1);
+                            bufIndex, offset, size, ptsUsec);
 
-                // If the virtual display isn't providing us with timestamps,
-                // use the current time.
-                if (ptsUsec == 0) {
-                    ptsUsec = systemTime(SYSTEM_TIME_MONOTONIC) / 1000;
-                }
+                    CHECK(audioTrackIdx != -1);
+
+
+
+                    if (ptsUsec < 0) ptsUsec = 0;
+
+                    if (ptsUsec < lastAudioPtsUs)
+
+                        ptsUsec = lastAudioPtsUs + 23219; // magical AAC encoded frame time
+
+                    lastAudioPtsUs = ptsUsec;
 
                 // The MediaMuxer docs are unclear, but it appears that we
                 // need to pass either the full set of BufferInfo flags, or
                 // (flags & BUFFER_FLAG_SYNCFRAME).
 
-                err = muxer->writeSampleData(buffers[bufIndex], trackIdx,ptsUsec, flags);
+                err = muxer->writeSampleData(buffers[bufIndex], videoTrackIdx,
+                        ptsUsec, flags);
+
                 if (err != NO_ERROR) {
                     fprintf(stderr, "Failed writing data to muxer (err=%d)\n",
                             err);
@@ -415,7 +524,7 @@ static status_t runEncoder(const sp<MediaCodec>& encoder,
                 }
                 debugNumFrames++;
             }
-            err = encoder->releaseOutputBuffer(bufIndex);
+            err = videoEncoder->releaseOutputBuffer(bufIndex);
             if (err != NO_ERROR) {
                 fprintf(stderr, "Unable to release output buffer (err=%d)\n",
                         err);
@@ -423,7 +532,7 @@ static status_t runEncoder(const sp<MediaCodec>& encoder,
             }
             if ((flags & MediaCodec::BUFFER_FLAG_EOS) != 0) {
                 // Not expecting EOS from SurfaceFlinger.  Go with it.
-                ALOGD("Received end-of-stream");
+                ALOGV("Received end-of-stream");
                 gStopRequested = false;
             }
             break;
@@ -435,20 +544,22 @@ static status_t runEncoder(const sp<MediaCodec>& encoder,
                 // format includes CSD, which we must provide to muxer
                 ALOGV("Encoder format changed");
                 sp<AMessage> newFormat;
-                encoder->getOutputFormat(&newFormat);
-                trackIdx = muxer->addTrack(newFormat);
-                ALOGV("Starting muxer");
-                err = muxer->start();
-                if (err != NO_ERROR) {
-                    fprintf(stderr, "Unable to start muxer (err=%d)\n", err);
-                    return err;
+                videoEncoder->getOutputFormat(&newFormat);
+                videoTrackIdx = muxer->addTrack(newFormat);
+                if (++tracksAdded >= (gRecordAudio ? 2 : 1)) {
+                    ALOGV("Starting muxer");
+                    err = muxer->start();
+                    if (err != NO_ERROR) {
+                        fprintf(stderr, "Unable to start muxer (err=%d)\n", err);
+                        return err;
+                    }
                 }
             }
             break;
         case INFO_OUTPUT_BUFFERS_CHANGED:   // INFO_OUTPUT_BUFFERS_CHANGED
             // not expected for an encoder; handle it anyway
             ALOGV("Encoder buffers changed");
-            err = encoder->getOutputBuffers(&buffers);
+            err = videoEncoder->getOutputBuffers(&buffers);
             if (err != NO_ERROR) {
                 fprintf(stderr,
                         "Unable to get new output buffers (err=%d)\n", err);
@@ -463,7 +574,96 @@ static status_t runEncoder(const sp<MediaCodec>& encoder,
                     "Got weird result %d from dequeueOutputBuffer\n", err);
             return err;
         }
+
+        if (gRecordAudio) {
+            ALOGV("Calling dequeueOutputBuffer for audioEncoder");
+            err = audioEncoder->dequeueOutputBuffer(&bufIndex, &offset, &size, &ptsUsec,
+                    &flags, kTimeout);
+            ALOGV("dequeueOutputBuffer returned %d", err);
+            switch (err) {
+            case NO_ERROR:
+                // got a buffer
+                if ((flags & MediaCodec::BUFFER_FLAG_CODECCONFIG) != 0) {
+                    // ignore this -- we passed the CSD into MediaMuxer when
+                    // we got the format change notification
+                    ALOGV("Got codec config buffer (%u bytes); ignoring", size);
+                    size = 0;
+                }
+                if (size != 0) {
+                    ALOGV("Got data in audio buffer %d, offset=%d, size=%d, pts=%lld",
+                            bufIndex, offset, size, ptsUsec);
+                    CHECK(audioTrackIdx != -1);
+
+                    if (ptsUsec < 0) ptsUsec = 0;
+                    if (ptsUsec < lastAudioPtsUs)
+                        ptsUsec = lastAudioPtsUs + 23219; // magical AAC encoded frame time
+                    lastAudioPtsUs = ptsUsec;
+
+                    // The MediaMuxer docs are unclear, but it appears that we
+                    // need to pass either the full set of BufferInfo flags, or
+                    // (flags & BUFFER_FLAG_SYNCFRAME).
+                    err = muxer->writeSampleData(audioOutputBuffers[bufIndex], audioTrackIdx,
+                            ptsUsec, flags);
+                    if (err != NO_ERROR) {
+                        fprintf(stderr, "Failed writing data to muxer (err=%d)\n",
+                                err);
+                        return err;
+                    }
+                }
+                err = audioEncoder->releaseOutputBuffer(bufIndex);
+                if (err != NO_ERROR) {
+                    fprintf(stderr, "Unable to release output buffer (err=%d)\n",
+                            err);
+                    return err;
+                }
+                if ((flags & MediaCodec::BUFFER_FLAG_EOS) != 0) {
+                    // Not expecting EOS.  Go with it.
+                    ALOGV("Received end-of-stream");
+                    gStopRequested = false;
+                }
+                break;
+            case -EAGAIN:                       // INFO_TRY_AGAIN_LATER
+                ALOGV("Got -EAGAIN, looping");
+                break;
+            case INFO_FORMAT_CHANGED:           // INFO_OUTPUT_FORMAT_CHANGED
+                {
+                    // format includes CSD, which we must provide to muxer
+                    ALOGV("Audio encoder format changed");
+                    sp<AMessage> newFormat;
+                    audioEncoder->getOutputFormat(&newFormat);
+                    audioTrackIdx = muxer->addTrack(newFormat);
+                    if (++tracksAdded >= 2) {
+                        ALOGV("Starting muxer");
+                        err = muxer->start();
+                        if (err != NO_ERROR) {
+                            fprintf(stderr, "Unable to start muxer (err=%d)\n", err);
+                            return err;
+                        }
+                    }
+                }
+                break;
+            case INFO_OUTPUT_BUFFERS_CHANGED:   // INFO_OUTPUT_BUFFERS_CHANGED
+                // not expected for an encoder; handle it anyway
+                ALOGV("Audio encoder buffers changed");
+                err = audioEncoder->getOutputBuffers(&audioOutputBuffers);
+                if (err != NO_ERROR) {
+                    fprintf(stderr,
+                            "Unable to get new output buffers (err=%d)\n", err);
+                    return err;
+                }
+                break;
+            case INVALID_OPERATION:
+                fprintf(stderr, "Request for encoder buffer failed\n");
+                return err;
+            default:
+                fprintf(stderr,
+                        "Got weird result %d from dequeueOutputBuffer\n", err);
+                return err;
+            }
+        }
     }
+
+    if (gRecordAudio) audioRecorder->stop();
 
     ALOGV("Encoder stopping (req=%d)", gStopRequested);
     if (gVerbose) {
@@ -512,9 +712,10 @@ static status_t recordScreen(const char* fileName) {
     }
 
     // Configure and start the encoder.
-    sp<MediaCodec> encoder;
+    sp<MediaCodec> videoEncoder;
+    sp<MediaCodec> audioEncoder;
     sp<IGraphicBufferProducer> bufferProducer;
-    err = prepareEncoder(mainDpyInfo.fps, &encoder, &bufferProducer);
+    err = prepareVideoEncoder(mainDpyInfo.fps, &videoEncoder, &bufferProducer);
 
     if (err != NO_ERROR && !gSizeSpecified) {
         // fallback is defined for landscape; swap if we're in portrait
@@ -527,19 +728,31 @@ static status_t recordScreen(const char* fileName) {
                     gVideoWidth, gVideoHeight, newWidth, newHeight);
             gVideoWidth = newWidth;
             gVideoHeight = newHeight;
-            err = prepareEncoder(mainDpyInfo.fps, &encoder, &bufferProducer);
+            err = prepareVideoEncoder(mainDpyInfo.fps, &videoEncoder, &bufferProducer);
         }
     }
     if (err != NO_ERROR) {
         return err;
     }
 
+    if (gRecordAudio) {
+        err = prepareAudioEncoder(&audioEncoder);
+        if (err != NO_ERROR) {
+            ALOGE("Unable to prepare audio encoder, recording video only.");
+            gRecordAudio = false;
+        }
+    }
+
     // Configure virtual display.
     sp<IBinder> dpy;
     err = prepareVirtualDisplay(mainDpyInfo, bufferProducer, &dpy);
     if (err != NO_ERROR) {
-        encoder->release();
-        encoder.clear();
+        videoEncoder->release();
+        videoEncoder.clear();
+        if (gRecordAudio) {
+            audioEncoder->release();
+            audioEncoder.clear();
+        }
 
         return err;
     }
@@ -558,25 +771,31 @@ static status_t recordScreen(const char* fileName) {
     }
 
     // Main encoder loop.
-    err = runEncoder(encoder, muxer);
+    err = runEncoder(audioEncoder, videoEncoder, muxer);
     if (err != NO_ERROR) {
-        encoder->release();
-        encoder.clear();
+        videoEncoder->release();
+        videoEncoder.clear();
+        if (gRecordAudio) {
+            audioEncoder->release();
+            audioEncoder.clear();
+        }
 
         return err;
     }
 
     if (gVerbose) {
-        printf("Stopping encoder and muxer\n");
+        printf("Stopping encoders and muxer\n");
     }
 
     // Shut everything down, starting with the producer side.
     bufferProducer = NULL;
     SurfaceComposerClient::destroyDisplay(dpy);
 
-    encoder->stop();
+    videoEncoder->stop();
+    if (gRecordAudio) audioEncoder->stop();
     muxer->stop();
-    encoder->release();
+    videoEncoder->release();
+    if (gRecordAudio) audioEncoder->release();
 
 
     return 0;
@@ -658,7 +877,9 @@ void *record(void *ptr) {
 }
 
 static void
-android_media_ScreenRecorder_native_init(JNIEnv *env, jobject thiz, jint orientation, jint videoWidth, jint videoHeight, jint bitRate, jint timeLimitSec) {
+android_media_ScreenRecorder_native_init(JNIEnv *env, jobject thiz, jint orientation,
+        jint videoWidth, jint videoHeight, jint bitRate, jint timeLimitSec, jboolean recordAudio) {
+
     gOrientation = (uint32_t) orientation;
     gSizeSpecified = (videoWidth != 0 && videoHeight != 0);
     if (gSizeSpecified) {
@@ -671,6 +892,7 @@ android_media_ScreenRecorder_native_init(JNIEnv *env, jobject thiz, jint orienta
     if ((uint32_t)timeLimitSec > 0 && (uint32_t)timeLimitSec < kMaxTimeLimitSec) {
         gTimeLimitSec = (uint32_t)timeLimitSec;
     }
+    gRecordAudio = recordAudio;
 }
 
 static jboolean
@@ -704,8 +926,7 @@ android_media_ScreenRecorder_native_stop(JNIEnv *env, jobject thiz) {
 }
 
 static JNINativeMethod gMethods[] = {
-
-    { "native_init",    "(IIIII)V", (void*)android_media_ScreenRecorder_native_init },
+    { "native_init",    "(IIIIIZ)V", (void*)android_media_ScreenRecorder_native_init },
     { "native_start",   "(Ljava/lang/String;)Z", (void*)android_media_ScreenRecorder_native_start },
     { "native_stop",    "()V", (void*)android_media_ScreenRecorder_native_stop },
 };
