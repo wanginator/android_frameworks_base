@@ -15,6 +15,7 @@
 
     <!-- Screenshot delete -->
     <string name="screenshot_delete_action">Delete</string>
+<string name="screenshot_delete_confirmation">Screenshot deleted.</string>
 
     <!-- Dialog title for navigation bar button selection -->
     <string name="navbar_dialog_title">Choose action to assign</string>
