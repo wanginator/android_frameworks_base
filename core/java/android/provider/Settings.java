@@ -2610,6 +2610,7 @@ public final class Settings {
         public static final String NAV_BUTTONS = "nav_buttons";
 
         /**
+
          * Display style of the status bar battery information
          * 0: Display the stock battery information
          * 1: Display cm battery percentage implementation / dont show stock icon
@@ -2617,11 +2618,20 @@ public final class Settings {
          * 3: Display cm circle battery implementation with percentage
          * 4: Hide the battery information
          * default: 0
+
          * @hide
          */
         public static final String STATUS_BAR_BATTERY = "status_bar_battery";
 
         /**
+         * Whether incomming call UI stays in background
+         *
+         * @hide
+         */
+        public static final String CALL_UI_IN_BACKGROUND = "call_ui_in_background";
+
+        /**
+        
          * Custom navring actions
          *
          * @hide
