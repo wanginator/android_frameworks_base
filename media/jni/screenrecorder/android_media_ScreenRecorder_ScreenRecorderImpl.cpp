@@ -444,7 +444,6 @@ static status_t runEncoder(const sp<MediaCodec>& audioEncoder,
         }
         audioRecorder->start();
     }
->>>>>>> f109bce... Screen recorder: add ability to record audio from mic [1/3]
 
     // This is set by the signal handler.
     gStopRequested = false;
