@@ -732,6 +732,34 @@ class QuickSettings {
             parent.addView(powermenuTile);
         }
 
+	// Sound tile
+            final QuickSettingsBasicTile soundTile = new QuickSettingsBasicTile(mContext);
+            soundTile.setImageResource(R.drawable.ic_qs_ringer_normal);
+            soundTile.setTextResource(R.string.quick_settings_ringer_mode_normal_label);
+            soundTile.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mModel.switchRingerMode();
+                    mModel.refreshRingerModeTile();
+                }
+            });
+            soundTile.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    collapsePanels();
+                    startSettingsActivity(android.provider.Settings.ACTION_SOUND_SETTINGS);
+                    return true;
+                 }
+            });
+            mModel.addRingerModeTile(soundTile, new QuickSettingsModel.RefreshCallback() {
+                @Override
+                public void refreshView(QuickSettingsTileView unused, State state) {
+                soundTile.setImageResource(state.iconId); soundTile.setText(state.label);
+                  }
+            });
+            parent.addView(soundTile);
+
+
         // Torch
         if (mModel.hasTorchPackage()) {
             final QuickSettingsBasicTile torchTile = new QuickSettingsBasicTile(mContext);
@@ -1029,3 +1057,4 @@ class QuickSettings {
         }
     }
 }
+
