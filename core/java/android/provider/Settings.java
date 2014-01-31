@@ -2649,6 +2649,13 @@ public final class Settings {
          */
         public static final String CALL_UI_IN_BACKGROUND = "call_ui_in_background";
 
+
+	/**
+ * Navigation bar button color
+         * @hide
+         */
+        public static final String NAVIGATION_BAR_TINT = "navigation_bar_tint";
+
         /**
         
          * Custom navring actions
