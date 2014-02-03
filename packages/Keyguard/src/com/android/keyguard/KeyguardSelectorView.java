@@ -230,8 +230,6 @@ public class KeyguardSelectorView extends LinearLayout implements KeyguardSecuri
             });
         }
 
-        final int unsecureUnlockMethod = Settings.Secure.getInt(mContext.getContentResolver(),
-                Settings.Secure.LOCKSCREEN_UNSECURE_USED, 1);
     }
 
     public void setCarrierArea(View carrierArea) {

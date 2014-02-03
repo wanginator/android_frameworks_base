@@ -142,8 +142,6 @@ public class KeyguardPatternView extends LinearLayout implements KeyguardSecurit
         // vibrate mode will be the same for the life of this screen
         mLockPatternView.setTactileFeedbackEnabled(mLockPatternUtils.isTactileFeedbackEnabled());
 
-        mLockPatternView.setLockPatternSize(mLockPatternUtils.getLockPatternSize());
-
         if (Settings.System.getInt(mContext.getContentResolver(),
                     Settings.System.DOUBLE_TAP_SLEEP_GESTURE, 0) == 1) {
             mLockPatternView.setOnTouchListener(new OnTouchListener() {

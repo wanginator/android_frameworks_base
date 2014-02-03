@@ -34,7 +34,7 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
-
+import android.provider.Settings;
 import com.android.internal.widget.LockPatternUtils;
 
 /**
@@ -129,9 +129,6 @@ public abstract class KeyguardAbsKeyInputView extends LinearLayout
                 }
             });
         }
-
-        mQuickUnlock = (Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.LOCKSCREEN_QUICK_UNLOCK_CONTROL, 0) == 1);
 
         // Set selected property on so the view can send accessibility events.
         mPasswordEntry.setSelected(true);
