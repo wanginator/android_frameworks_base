@@ -30,6 +30,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.animation.TimeInterpolator;
 import android.app.ActivityManager;
+import android.app.KeyguardManager;
 import android.app.ActivityManagerNative;
 import android.app.KeyguardManager;
 import android.app.Notification;
@@ -819,7 +820,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
 
         addText((TextView) mStatusBarView.findViewById(R.id.center_clock));
         addText((TextView) mStatusBarView.findViewById(R.id.clock));
-
+        addText((TextView) mStatusBarView.findViewById(R.id.networkTraffic));
         mKeyguardManager = (KeyguardManager) mContext.getSystemService(Context.KEYGUARD_SERVICE);
         PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
         mBroadcastReceiver.onReceive(mContext,
@@ -3356,7 +3357,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
 		return color;
 	}
 
-	private void setStatusBarColor(int color) {
+	private void setStatusBarColor() {
 		for (ImageView icon : mIcons) {
 			if (icon != null) {
 				icon.setColorFilter(mCurrentColor, PorterDuff.Mode.MULTIPLY);
@@ -3367,11 +3368,18 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
 
 		for (TextView tv : mTexts) {
 			if (tv != null) {
-				tv.setTextColor(color);
+				tv.setTextColor(mCurrentColor);
 			} else {
 				mTexts.remove(tv);
 			}
 		}
+
+		mCircleBattery.setCircleColor(mCurrentColor);
+		mBattery.mChameleonBatteryColor = mCurrentColor;
+		mBattery.mChameleonBoltColor = isGray(mCurrentColor) ? Color.BLACK : Color.WHITE;
+		mBattery.updateBattery();
+		mBattery.invalidate();
+
 	}
 
 	private void updateBackgroundDelayed() {
@@ -3398,7 +3406,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
 
 	private void refresh() {
 		setColorForLayout(mStatusIcons, mCurrentColor, PorterDuff.Mode.MULTIPLY);
-		setStatusBarColor(mCurrentColor);
+		setStatusBarColor();
 	}
 
 	private void setColorForLayout(LinearLayout statusIcons, int color,
