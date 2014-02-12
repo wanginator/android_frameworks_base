@@ -1366,3 +1366,4 @@ public final class Configuration implements Parcelable, Comparable<Configuration
         return screenLayout&~SCREENLAYOUT_LAYOUTDIR_MASK;
     }
 }
+
