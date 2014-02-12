@@ -431,6 +431,8 @@ updateSettings();
 
         mCurrUiThemeMode = mContext.getResources().getConfiguration().uiThemeMode;
 
+        mCurrUiThemeMode = mContext.getResources().getConfiguration().uiThemeMode;
+
         super.start(); // calls createAndAddWindows()
 
         addNavigationBar();
@@ -2880,6 +2882,7 @@ updateSettings();
         int uiThemeMode = res.getConfiguration().uiThemeMode;
         if (uiThemeMode != mCurrUiThemeMode) {
             mCurrUiThemeMode = uiThemeMode;
+            //recreateStatusBar();
             return;
         }
 
