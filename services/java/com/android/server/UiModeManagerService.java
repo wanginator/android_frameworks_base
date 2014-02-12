@@ -228,6 +228,8 @@ final class UiModeManagerService extends IUiModeManager.Stub
 
         mSensorManager = (SensorManager)(context.getSystemService(Context.SENSOR_SERVICE));
 
+        mSensorManager = (SensorManager)(context.getSystemService(Context.SENSOR_SERVICE));
+
         mPowerManager = (PowerManager)context.getSystemService(Context.POWER_SERVICE);
         mWakeLock = mPowerManager.newWakeLock(PowerManager.FULL_WAKE_LOCK, TAG);
 
@@ -301,11 +303,11 @@ final class UiModeManagerService extends IUiModeManager.Stub
     public void onSensorChanged(SensorEvent event) {
         int type = event.sensor.getType();
         if (type == Sensor.TYPE_LIGHT) {
-            if (event.values[0] <= mCurrentSwitchLevel) {
-                mCurrentSwitchLevel = LIGHT_CONDITION;
+           if (event.values[0] <= mCurrentSwitchLevel) {
+		mCurrentSwitchLevel = LIGHT_CONDITION;
                 mConfiguration.uiThemeMode = Configuration.UI_THEME_MODE_HOLO_DARK;
             } else {
-                mCurrentSwitchLevel = DARK_CONDITION;
+		mCurrentSwitchLevel = DARK_CONDITION;
                 mConfiguration.uiThemeMode = Configuration.UI_THEME_MODE_HOLO_LIGHT;
             }
             synchronized (mLock) {
