@@ -2543,12 +2543,6 @@ public final class Settings {
 
         /**
 
-         * Whether power menu screen record is enabled
-         * @hide
-         */
-        public static final String POWER_MENU_SCREENRECORD_ENABLED = "power_menu_screenrecord_enabled";
-
-/**
 * Boolean value whether to link ringtone and notification volumes
 * @hide
 */
@@ -2840,6 +2834,54 @@ public final class Settings {
          */
         public static final String LOCKSCREEN_NOTIFICATIONS_COLOR = "lockscreen_notifications_color";
 
+	/**
+         * Whether the power menu reboot menu is enabled
+         * @hide
+         */
+        public static final String POWER_MENU_REBOOT_ENABLED = "power_menu_reboot_enabled";
+
+        /**
+         * Whether power menu screenshot is enabled
+         * @hide
+         */
+        public static final String POWER_MENU_SCREENSHOT_ENABLED = "power_menu_screenshot_enabled";
+	
+	/**       
+ 	* Whether power menu screen record is enabled
+         * @hide
+         */
+        public static final String POWER_MENU_SCREENRECORD_ENABLED = "power_menu_screenrecord_enabled";
+
+        /**
+         * Whether power menu airplane toggle is enabled
+         * @hide
+         */
+        public static final String POWER_MENU_AIRPLANE_ENABLED = "power_menu_airplane_enabled";
+
+        /**
+         * Whether power menu silent mode is enabled
+         * @hide
+         */
+        public static final String POWER_MENU_SILENT_ENABLED = "power_menu_silent_enabled";
+
+      /**
+         * Global immersive mode on/off state
+         * @hide
+         */
+        public static final String GLOBAL_IMMERSIVE_MODE_STATE = "global_immersive_mode_state";
+
+        /**
+         * Global immersive mode style (with status bar or without status bar)
+         * @hide
+         */
+        public static final String GLOBAL_IMMERSIVE_MODE_STYLE = "global_immersive_mode_style";
+
+        /**
+         * Whether power menu expanded desktop is enabled
+         * @hide
+         */
+        public static final String POWER_MENU_GLOBAL_IMMERSIVE_MODE_ENABLED = "power_menu_global_immersive_mode_enabled";
+
         /**
          * Settings to backup. This is here so that it's in the same place as the settings
          * keys and easy to update.
@@ -2905,7 +2947,13 @@ public final class Settings {
             POINTER_SPEED,
             VIBRATE_WHEN_RINGING,
             RINGTONE,
-            NOTIFICATION_SOUND
+            NOTIFICATION_SOUND,
+            POWER_MENU_SCREENSHOT_ENABLED,
+            POWER_MENU_REBOOT_ENABLED,
+            POWER_MENU_AIRPLANE_ENABLED,
+            POWER_MENU_SILENT_ENABLED,
+	    POWER_MENU_SCREENRECORD_ENABLED
+
         };
 
         // Settings moved to Settings.Secure
