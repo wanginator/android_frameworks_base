@@ -1261,8 +1261,6 @@ public class NotificationManagerService extends INotificationManager.Stub
     };
 
     class SettingsObserver extends ContentObserver {
-        private final Uri NOTIFICATION_LIGHT_PULSE_URI
-                = Settings.System.getUriFor(Settings.System.NOTIFICATION_LIGHT_PULSE);
 
         private final Uri ENABLED_NOTIFICATION_LISTENERS_URI
                 = Settings.Secure.getUriFor(Settings.Secure.ENABLED_NOTIFICATION_LISTENERS);
@@ -1273,12 +1271,13 @@ public class NotificationManagerService extends INotificationManager.Stub
 
         void observe() {
             ContentResolver resolver = mContext.getContentResolver();
-            resolver.registerContentObserver(NOTIFICATION_LIGHT_PULSE_URI,
-                    false, this, UserHandle.USER_ALL);
             resolver.registerContentObserver(ENABLED_NOTIFICATION_LISTENERS_URI,
                     false, this, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.NOTIFICATION_LIGHT_PULSE_DEFAULT_COLOR), false, this);
+		Settings.System.NOTIFICATION_LIGHT_PULSE), false, this);
+
+            resolver.registerContentObserver(Settings.System.getUriFor(
+		Settings.System.NOTIFICATION_LIGHT_PULSE_DEFAULT_COLOR), false, this);
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.NOTIFICATION_LIGHT_PULSE_DEFAULT_LED_ON), false, this);
             resolver.registerContentObserver(Settings.System.getUriFor(
@@ -1300,7 +1299,8 @@ public class NotificationManagerService extends INotificationManager.Stub
 
             // LED enabled
             mNotificationPulseEnabled = Settings.System.getIntForUser(resolver,
-                    Settings.System.NOTIFICATION_LIGHT_PULSE, 0, UserHandle.USER_CURRENT) != 0;
+                    Settings.System.NOTIFICATION_LIGHT_PULSE, mNotificationPulseEnabled ? 1 : 0, 
+                    UserHandle.USER_CURRENT) != 0;
 
             // LED default color
             mDefaultNotificationColor = Settings.System.getIntForUser(resolver,
@@ -1369,6 +1369,8 @@ public class NotificationManagerService extends INotificationManager.Stub
         mAttentionLight = lights.getLight(LightsService.LIGHT_ID_ATTENTION);
 
         Resources resources = mContext.getResources();
+        mNotificationPulseEnabled = resources.getBoolean(
+	R.bool.config_intrusiveNotificationLed);
         mDefaultNotificationColor = resources.getColor(
                 R.color.config_defaultNotificationColor);
         mDefaultNotificationLedOn = resources.getInteger(
