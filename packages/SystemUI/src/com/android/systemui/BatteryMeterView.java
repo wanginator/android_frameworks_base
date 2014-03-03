@@ -238,6 +238,7 @@ public class BatteryMeterView extends View implements DemoMode {
 
         mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mTextPaint.setTextAlign(Paint.Align.CENTER);
+        mTextPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
 
         mWarningTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mWarningTextPaint.setColor(mColors[1]);
