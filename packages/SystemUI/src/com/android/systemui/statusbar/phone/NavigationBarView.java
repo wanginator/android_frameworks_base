@@ -74,6 +74,7 @@ public class NavigationBarView extends LinearLayout {
     private NavbarEditor mEditBar;
     private NavBarReceiver mNavBarReceiver;
     private OnClickListener mRecentsClickListener;
+    private OnLongClickListener mRecentsLongClickListener;
     private OnTouchListener mRecentsPreloadListener;
     private OnTouchListener mHomeSearchActionListener;
 
@@ -288,9 +289,10 @@ public class NavigationBarView extends LinearLayout {
         return mInEditMode;
     }
 
-    /* package */ void setListeners(OnClickListener recentsClickListener,
+    /* package */ void setListeners(OnClickListener recentsClickListener, OnLongClickListener recentsLongClickListener,
             OnTouchListener recentsPreloadListener, OnTouchListener homeSearchActionListener) {
         mRecentsClickListener = recentsClickListener;
+        mRecentsLongClickListener = recentsLongClickListener;
         mRecentsPreloadListener = recentsPreloadListener;
         mHomeSearchActionListener = homeSearchActionListener;
         updateButtonListeners();
@@ -312,6 +314,7 @@ public class NavigationBarView extends LinearLayout {
         View recentView = mCurrentView.findViewWithTag(NavbarEditor.NAVBAR_RECENT);
         if (recentView != null) {
             recentView.setOnClickListener(mRecentsClickListener);
+            recentView.setOnLongClickListener(mRecentsLongClickListener);
             recentView.setOnTouchListener(mRecentsPreloadListener);
         }
         View homeView = mCurrentView.findViewWithTag(NavbarEditor.NAVBAR_HOME);

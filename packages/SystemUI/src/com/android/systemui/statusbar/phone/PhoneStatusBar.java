@@ -71,6 +71,7 @@ import android.util.Log;
 import android.util.Slog;
 import android.view.Display;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
@@ -108,6 +109,7 @@ import com.android.systemui.statusbar.policy.BluetoothController;
 import com.android.systemui.statusbar.policy.CircleBattery;
 import com.android.systemui.statusbar.policy.DateView;
 import com.android.systemui.statusbar.policy.HeadsUpNotificationView;
+import com.android.systemui.statusbar.policy.KeyButtonView;
 import com.android.systemui.statusbar.policy.LocationController;
 import com.android.systemui.statusbar.policy.NetworkController;
 import com.android.systemui.statusbar.policy.NotificationRowLayout;
@@ -851,10 +853,24 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
         return mNaturalBarHeight;
     }
 
+    private boolean mRecentsLongClicked = false;
     private View.OnClickListener mRecentsClickListener = new View.OnClickListener() {
         public void onClick(View v) {
+            if (!mRecentsLongClicked) {
+                awakenDreams();
+                toggleRecentApps();
+            } else {
+                mRecentsLongClicked = false;
+            }
+        }
+    };
+
+    private View.OnLongClickListener mRecentsLongClickListener = new View.OnLongClickListener() {
+        public boolean onLongClick(View v) {
             awakenDreams();
-            toggleRecentApps();
+            toggleLastApp();
+            mRecentsLongClicked = true;
+            return true;
         }
     };
 
@@ -899,7 +915,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
     private void prepareNavigationBarView() {
         mNavigationBarView.reorient();
 
-        mNavigationBarView.setListeners(mRecentsClickListener,
+        mNavigationBarView.setListeners(mRecentsClickListener, mRecentsLongClickListener,
                 mRecentsPreloadOnTouchListener, mHomeSearchActionListener);
         updateSearchPanel();
     }
@@ -3082,3 +3098,4 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
         }
     }
 }
+
