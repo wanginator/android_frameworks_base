@@ -56,13 +56,14 @@ public class ScreenRecorder {
 
     /**
      * Initialize the screen recorder.
-
+<<<<<<< HEAD
+<<<<<<< HEAD
      * @param rotation The display orientation to record, can be one of the following:
 
      * @param orientation The display orientation to record, can be one of the following:
-
+=======
      * @param rotation The display orientation to record, can be one of the following:
-
+>>>>>>> f109bce... Screen recorder: add ability to record audio from mic [1/3]
      *                    Surface.ROTATION_0
      *                    Surface.ROTATION_90
      *                    Surface.ROTATION_180
@@ -72,10 +73,13 @@ public class ScreenRecorder {
      * @param bitRate Bitrate to record at, default is 4000000.
      * @param timeLimitSec Maximum time to record for.  Maximum allowed is 300 seconds (5 minutes).
      */
+<<<<<<< HEAD
 
-
-    public void init(int rotation, int width, int height,int bitRate, int timeLimitSec, boolean recordAudio) {
-
+    public void init(int rotation, int width, int height, int bitRate, int timeLimitSec) {
+=======
+    public void init(int rotation, int width, int height,
+                     int bitRate, int timeLimitSec, boolean recordAudio) {
+>>>>>>> f109bce... Screen recorder: add ability to record audio from mic [1/3]
         if (sState == STATE_RECORDING) {
             throw new IllegalStateException("ScreenRecorder is currently recording.");
         }
@@ -89,9 +93,12 @@ public class ScreenRecorder {
         if (height <= 0) {
             throw new IllegalArgumentException("Invalid height: " + height);
         }
+<<<<<<< HEAD
 
+        native_init(rotation, width, height, bitRate, timeLimitSec);
+=======
         native_init(rotation, width, height, bitRate, timeLimitSec, recordAudio);
-
+>>>>>>> f109bce... Screen recorder: add ability to record audio from mic [1/3]
         sState = STATE_IDLE;
     }
 
@@ -155,7 +162,8 @@ public class ScreenRecorder {
         public void onRecordingError(String error);
     }
 
-    private static native void native_init(int rotation, int width, int height,int bitRate, int timeLimitSec, boolean recordAudio);
+    private static native void native_init(int rotation, int width, int height,
+                                           int bitRate, int timeLimitSec, boolean recordAudio);
     private static native boolean native_start(String fileName);
     private static native void native_stop();
 
