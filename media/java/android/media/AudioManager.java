@@ -438,7 +438,6 @@ public class AudioManager {
         mUseVolumeKeySounds = mContext.getResources().getBoolean(
                 com.android.internal.R.bool.config_useVolumeKeySounds);
 
-        mProfileManager = (ProfileManager) context.getSystemService(Context.PROFILE_SERVICE);
         mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
     }
 
