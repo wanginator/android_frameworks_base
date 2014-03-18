@@ -44,6 +44,6 @@
     <item type="drawable" name="selected_day_background">#ff0092f4</item>
     <item type="drawable" name="screen_background_holo_light">#fff3f3f3</item>
     <item type="drawable" name="screen_background_holo_dark">#ff000000</item>
-    <item type="drawable" name="notification_template_icon_bg">#00000000</item>
+    <item type="drawable" name="notification_template_icon_bg">#3333B5E5</item>
     <item type="drawable" name="notification_template_icon_low_bg">#0cffffff</item>
 </resources>
