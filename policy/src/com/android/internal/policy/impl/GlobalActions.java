@@ -83,7 +83,7 @@ import android.content.ComponentName;
 import android.os.IBinder;
 import android.os.Messenger;
 import android.os.RemoteException;
-
+import com.android.internal.statusbar.IStatusBarService;
 
 /**
  * Helper to show the global actions dialog.  Each item is an {@link Action} that
@@ -189,6 +189,14 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
         awakenIfNecessary();
         mDialog = createDialog();
         prepareDialog();
+
+        final IStatusBarService barService = IStatusBarService.Stub.asInterface(
+                ServiceManager.getService(Context.STATUS_BAR_SERVICE));
+        try {
+            barService.collapsePanels();
+        } catch (RemoteException ex) {
+            // make poo
+        }
 
         WindowManager.LayoutParams attrs = mDialog.getWindow().getAttributes();
         attrs.setTitle("GlobalActions");
