@@ -252,8 +252,6 @@ public class BatteryCircleMeterView extends ImageView {
         if (level < 100 && mPercentage) {
             if (level <= 14) {
                 mPaintFont.setColor(mPaintRed.getColor());
-            } else if (mIsCharging) {
-                mPaintFont.setColor(mCircleTextChargingColor);
             } else {
                 mPaintFont.setColor(mCircleTextColor);
             }
@@ -334,6 +332,32 @@ public class BatteryCircleMeterView extends ImageView {
             invalidate();
         }
     }
+
+	public void setCircleColor(int color) {
+	mCircleColor = color;
+	mCircleTextColor = color;
+	initializeCircleVars();
+        mRectLeft = null;
+        mCircleSize = 0;
+
+        mActivated = (mBatteryStyle == BatteryMeterView.BATTERY_STYLE_CIRCLE ||
+                      mBatteryStyle == BatteryMeterView.BATTERY_STYLE_CIRCLE_PERCENT ||
+                      mBatteryStyle == BatteryMeterView.BATTERY_STYLE_DOTTED_CIRCLE ||
+                      mBatteryStyle == BatteryMeterView.BATTERY_STYLE_DOTTED_CIRCLE_PERCENT);
+        mPercentage = (mBatteryStyle == BatteryMeterView.BATTERY_STYLE_CIRCLE_PERCENT ||
+                       mBatteryStyle == BatteryMeterView.BATTERY_STYLE_DOTTED_CIRCLE_PERCENT);
+
+        setVisibility(mActivated ? View.VISIBLE : View.GONE);
+
+        if (mBatteryReceiver != null) {
+            mBatteryReceiver.updateRegistration();
+        }
+
+        if (mActivated && mAttached) {
+            invalidate();
+        }
+
+    } 
 
     /***
      * Initialize the Circle vars for start

@@ -91,7 +91,8 @@ public class BatteryMeterView extends View implements DemoMode {
     private int mPercentageChargingColor;
     private boolean mPercentageOnly = false;
     private String mBatteryTypeView;
-
+    public int mChameleonBatteryColor = Color.WHITE;
+    public int mChameleonBoltColor = Color.BLACK;
     private class BatteryTracker extends BroadcastReceiver {
         public static final int UNKNOWN_LEVEL = -1;
 
@@ -237,6 +238,7 @@ public class BatteryMeterView extends View implements DemoMode {
 
         mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mTextPaint.setTextAlign(Paint.Align.CENTER);
+        mTextPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
 
         mWarningTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mWarningTextPaint.setColor(mColors[1]);
@@ -481,7 +483,7 @@ public class BatteryMeterView extends View implements DemoMode {
         }
     }
 
-    private void updateBattery() {
+    public void updateBattery() {
         mPercentageOnly = false;
         SHOW_100_PERCENT = false;
 
@@ -506,41 +508,26 @@ public class BatteryMeterView extends View implements DemoMode {
 
         if (tracker.level <= 14 && !tracker.plugged) {
             mBatteryPaint.setColor(Color.RED);
-        } else if (mBatteryColor == -2) {
-            mBatteryPaint.setColor(mContext.getResources().getColor(
-                    R.color.batterymeter_charge_color));
         } else {
-            mBatteryPaint.setColor(mBatteryColor);
+            mBatteryPaint.setColor(mChameleonBatteryColor);
+            mFramePaint.setColor(Integer.parseInt("50" + String.format("%02x%02x%02x", Color.red(mChameleonBatteryColor), Color.green(mChameleonBatteryColor), Color.blue(mChameleonBatteryColor)), 16));
         }
 
         if (tracker.plugged) {
             if (mPercentageChargingColor == -2) {
                 if (mBatteryStyle == BATTERY_STYLE_PERCENT) {
-                    mBoltPaint.setColor(mContext.getResources().getColor(
-                            R.color.batterymeter_charge_color));
+                    mBoltPaint.setColor(mChameleonBatteryColor);
                 } else {
-                    mBoltPaint.setColor(mContext.getResources().getColor(
-                            R.color.batterymeter_bolt_color));
+                    mBoltPaint.setColor(mChameleonBoltColor);
                 }
             } else {
-                mBoltPaint.setColor(mPercentageChargingColor);
+                mBoltPaint.setColor(mChameleonBoltColor);
             }
-            mTextPaint.setColor(mBoltPaint.getColor());
+        }
+        if (mBatteryStyle == BATTERY_STYLE_ICON_PERCENT) {
+            mTextPaint.setColor(mChameleonBoltColor);
         } else {
-            if (tracker.level <= 14 && (mBatteryStyle == BATTERY_STYLE_PERCENT
-                    || mBatteryStyle == BATTERY_STYLE_ICON_PERCENT)) {
-                mTextPaint.setColor(Color.RED);
-            } else if (mPercentageColor == -2) {
-                if (mBatteryStyle == BATTERY_STYLE_ICON_PERCENT) {
-                    mTextPaint.setColor(mContext.getResources().getColor(
-                            R.color.batterymeter_bolt_color));
-                } else {
-                    mTextPaint.setColor(mContext.getResources().getColor(
-                            R.color.batterymeter_charge_color));
-                }
-            } else {
-                mTextPaint.setColor(mPercentageColor);
-            }
+            mTextPaint.setColor(mChameleonBatteryColor);
         }
         postInvalidate();
     }
