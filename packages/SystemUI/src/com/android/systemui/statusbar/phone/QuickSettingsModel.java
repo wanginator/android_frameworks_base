@@ -660,15 +660,15 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
     }
     // BatteryController callback
     @Override
-    public void onBatteryLevelChanged(int level, boolean pluggedIn) {
+    public void onBatteryLevelChanged(int level, boolean pluggedIn, int status) {
+        // hide battery percentage, if enabled in status bar battery style
+        BatteryMeterView tilePercentage = (BatteryMeterView) mBatteryTile.findViewById(R.id.image);
+        tilePercentage.setShowPercentage(false);
         mBatteryState.batteryLevel = level;
         mBatteryState.pluggedIn = pluggedIn;
         mBatteryCallback.refreshView(mBatteryTile, mBatteryState);
     }
     void refreshBatteryTile() {
-        if (mBatteryCallback == null) {
-            return;
-        }
         mBatteryCallback.refreshView(mBatteryTile, mBatteryState);
     }
 
