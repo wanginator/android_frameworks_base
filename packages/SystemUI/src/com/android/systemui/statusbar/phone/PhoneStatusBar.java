@@ -2857,11 +2857,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
                 // work around problem where mDisplay.getRotation() is not stable while screen is off (bug 7086018)
                 repositionNavigationBar();
                 notifyNavigationBarScreenOn(true);
-                if (mKeyguardManager.inKeyguardRestrictedInputMode()) {
-                    mTransparent = true;
-                    mStatusBarView.setBackgroundColor(Color.TRANSPARENT);
-                    mIsInKeyguard = true;
-                }
                 updateBackground();
             }
             else if (ACTION_DEMO.equals(action)) {
@@ -3237,14 +3232,8 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
 			if (!mScreenOn) {
 				return;
 			}
-			if (mIsInKeyguard
-					&& !mKeyguardManager.inKeyguardRestrictedInputMode()) {
-				updateColor();
-			}
-			if (mHeadsUpVerticalOffset == 0.0f) {
-				mTransparent = true;
+			if (mTransparent)
 				mStatusBarView.setBackgroundColor(Color.TRANSPARENT);
-			}
 			int mSysColor = getSysColor();
 			transform(isGray(mSysColor));		
 			if (mSysColor == mStatusBarColor) {
@@ -3254,7 +3243,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
 				mStatusBarColor = mSysColor;
 			}
 			if (mTransparent) {
-				mStatusBarView.setBackgroundColor(Color.TRANSPARENT);
 				updateBackgroundDelayed();
 				return;
 			}
