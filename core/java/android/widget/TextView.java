@@ -286,7 +286,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     private boolean mFreezesText;
     private boolean mTemporaryDetach;
     private boolean mDispatchTemporaryDetach;
-
+    public boolean mTransColor = true;
     private Editable.Factory mEditableFactory = Editable.Factory.getInstance();
     private Spannable.Factory mSpannableFactory = Spannable.Factory.getInstance();
 
