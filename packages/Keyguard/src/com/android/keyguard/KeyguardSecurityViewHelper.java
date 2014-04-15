@@ -21,10 +21,6 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.graphics.drawable.Drawable;
 import android.view.View;
-import android.content.Context;
-import android.content.ContentResolver;
-import android.provider.Settings;
-import android.os.UserHandle;
 
 /**
  * Some common functions that are useful for KeyguardSecurityViews.
@@ -94,12 +90,5 @@ public class KeyguardSecurityViewHelper {
                 bouncerFrame.setAlpha(0);
             }
         }
-    }
-
-    public static boolean hideWidgetFrame(Context context) {
-        return Settings.System.getIntForUser(
-                context.getContentResolver(),
-                Settings.System.LOCKSCREEN_WIDGET_FRAME_ENABLED, 0,
-                UserHandle.USER_CURRENT) == 1;
     }
 }
