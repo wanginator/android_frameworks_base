@@ -498,9 +498,7 @@ public class NavigationBarView extends LinearLayout {
         setButtonWithTagVisibility(NavbarEditor.NAVBAR_SEARCH, !disableRecent);
 
         final boolean showSearch = disableHome && !disableSearch;
-        final boolean showCamera = showSearch && !mCameraDisabledByDpm &&
-                Settings.System.getInt(getContext().getContentResolver(),
-                Settings.System.LOCKSCREEN_ENABLE_CAMERA, 1) == 1;
+        final boolean showCamera = showSearch && !mCameraDisabledByDpm;
         final boolean showNotifs = showSearch &&
             Settings.System.getInt(mContext.getContentResolver(),
                 Settings.System.LOCKSCREEN_NOTIFICATIONS, 1) == 1
