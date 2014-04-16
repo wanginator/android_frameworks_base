@@ -3106,6 +3106,19 @@ public final class Settings {
          */
         public static final String CLEAR_RECENTS_BUTTON_LOCATION = "clear_recents_button_location";
 
+        /**
+	* Whether to display app circle sidebar
+	* @hide
+	*/
+        public static final String ENABLE_APP_CIRCLE_BAR = "enable_app_circle_bar";
+
+        /**
+	* A list of packages to include in app circle bar
+	* This should be a string of packages separated by |
+	* @hide
+	*/
+        public static final String WHITELIST_APP_CIRCLE_BAR = "whitelist_app_circle_bar";
+
 	/**
 	* Display style of the status bar battery information
 	* 0: Display the battery an icon in portrait mode
