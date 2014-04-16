@@ -308,6 +308,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
     int mLinger;
     int mInitialTouchX;
     int mInitialTouchY;
+    private boolean mRecreating = false;
 
     // for disabling the status bar
     int mDisabled = 0;
@@ -1137,9 +1138,9 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
                 notification.getNotification().fullScreenIntent.send();
             } catch (PendingIntent.CanceledException e) {
             }
-        } else {
+       } else if (!mRecreating) {
             // usual case: status bar visible & not immersive
-
+		addAppCircleSidebar();
             // show the ticker if there isn't already a heads up
             if (mInterruptingNotificationEntry == null) {
                 tick(null, notification, true);
@@ -3437,3 +3438,4 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
 		}
 	}
 }
+
