@@ -5139,10 +5139,17 @@ public final class Settings {
          */
         public static final String PAYMENT_SERVICE_SEARCH_URI = "payment_service_search_uri";
 
-        /**
-          * Whether to allow killing of the foreground app by long-pressing the Back button
-          * @hide
-          */
+	/**
+         * Whether to display the 'Wipe data' and 'Force close' options in the notification
+         * area and in the recent app list
+         * @hide
+         */
+        public static final String DEVELOPMENT_SHORTCUT = "development_shortcut";
+
+	/**
+         * Whether to allow killing of the foreground app by long-pressing the Back button
+         * @hide
+         */
          public static final String KILL_APP_LONGPRESS_BACK = "kill_app_longpress_back";
 
         /**
@@ -5195,7 +5202,8 @@ public final class Settings {
             MOUNT_UMS_NOTIFY_ENABLED,
             UI_NIGHT_MODE,
             UI_THEME_MODE,
-            UI_THEME_AUTO_MODE
+            UI_THEME_AUTO_MODE,
+	    DEVELOPMENT_SHORTCUT
         };
 
         /**
