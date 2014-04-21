@@ -680,19 +680,18 @@ class QuickSettings {
         });
         parent.addView(locationTile);
 
-    // Power Menu
-        final QuickSettingsBasicTile powermenuTile = new QuickSettingsBasicTile(mContext);
-        powermenuTile.setImageResource(R.drawable.ic_qs_power_menu);
-        powermenuTile.setOnClickListener(new View.OnClickListener() {
+        // Screen off
+        final QuickSettingsBasicTile screenoffTile = new QuickSettingsBasicTile(mContext);
+        screenoffTile.setImageResource(R.drawable.ic_qs_power_menu);
+        screenoffTile.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                getService().animateCollapsePanels();
-                Intent intent = new Intent(Intent.ACTION_POWERMENU);
-                mContext.sendBroadcast(intent);
+                PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
+                pm.goToSleep(SystemClock.uptimeMillis());
             }
         });
-        if (LONG_PRESS_TOGGLES) {
-            powermenuTile.setOnLongClickListener(new View.OnLongClickListener() {
+	if (LONG_PRESS_TOGGLES) {
+            screenoffTile.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
                     getService().animateCollapsePanels();
@@ -701,11 +700,10 @@ class QuickSettings {
                     return true;
                 }
             });
-            mModel.addPowerMenuTile(powermenuTile,
-                    new QuickSettingsModel.BasicRefreshCallback(powermenuTile));
-            parent.addView(powermenuTile);
-        }
-
+        mModel.addScreenOffTile(screenoffTile,
+                new QuickSettingsModel.BasicRefreshCallback(screenoffTile));
+        parent.addView(screenoffTile);
+}
 	// Sound tile
             final QuickSettingsBasicTile soundTile = new QuickSettingsBasicTile(mContext);
             soundTile.setImageResource(R.drawable.ic_qs_ringer_normal);
@@ -732,20 +730,6 @@ class QuickSettings {
                   }
             });
             parent.addView(soundTile);
-
-        // Screen off
-        final QuickSettingsBasicTile screenoffTile = new QuickSettingsBasicTile(mContext);
-        screenoffTile.setImageResource(R.drawable.ic_qs_screen_off);
-        screenoffTile.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
-                pm.goToSleep(SystemClock.uptimeMillis());
-            }
-        });
-        mModel.addScreenOffTile(screenoffTile,
-                new QuickSettingsModel.BasicRefreshCallback(screenoffTile));
-        parent.addView(screenoffTile);
 
         // Torch
         if (mModel.hasTorchPackage()) {
