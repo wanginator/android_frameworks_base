@@ -6,7 +6,7 @@
     <!-- Power Menu tile -->
     <string name="quick_settings_power_menu_label">Power Menu</string>
     <!-- Screen off tile -->
-    <string name="quick_settings_screen_off_label">Screen Off</string>
+    <string name="quick_settings_screen_off_label">Power</string>
     <!-- Torch tile -->
     <string name="quick_settings_torch_label">Torch</string>
 

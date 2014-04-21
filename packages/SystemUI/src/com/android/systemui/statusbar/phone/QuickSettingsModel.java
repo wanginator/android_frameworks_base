@@ -333,10 +333,6 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
     private RefreshCallback mSslCaCertWarningCallback;
     private State mSslCaCertWarningState = new State();
 
-    private QuickSettingsTileView mPowerMenuTile;
-    private RefreshCallback mPowerMenuCallback;
-    private State mPowerMenuState = new State();
-
     private QuickSettingsTileView mTorchTile;
     private RefreshCallback mTorchCallback;
     private State mTorchState = new State();
@@ -405,7 +401,6 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
         refreshRotationLockTile();
         refreshRssiTile();
         refreshLocationTile();
-        refreshPowerMenuTile();
         refreshTorchTile();
         refreshRingerModeTile();
         refreshScreenOffTile();
@@ -933,18 +928,6 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
         mSslCaCertWarningCallback.refreshView(mSslCaCertWarningTile, mSslCaCertWarningState);
     }
 
-    // Power Menu
-    void addPowerMenuTile(QuickSettingsTileView view, RefreshCallback cb) {
-        mPowerMenuTile = view;
-        mPowerMenuCallback = cb;
-        refreshPowerMenuTile();
-    }
-    void refreshPowerMenuTile() {
-        Resources r = mContext.getResources();
-        mPowerMenuState.label = r.getString(R.string.quick_settings_power_menu_label);
-        mPowerMenuCallback.refreshView(mPowerMenuTile, mPowerMenuState);
-    }
-
     // Torch
     // show torch tile only on device with flash
     boolean hasTorchPackage() {
@@ -1053,7 +1036,7 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
                 setRingerMode(RINGER_MODE_SILENT);
                 break;
         }
-
+}
     // Screen Off
     void addScreenOffTile(QuickSettingsTileView view, RefreshCallback cb) {
         mScreenOffTile = view;
