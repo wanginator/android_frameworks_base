@@ -345,6 +345,10 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
     private RefreshCallback mRingerModeCallback;
     private State mRingerModeState = new State();
 
+    private QuickSettingsTileView mScreenOffTile;
+    private RefreshCallback mScreenOffCallback;
+    private State mScreenOffState = new State();
+
     private RotationLockController mRotationLockController;
 
     public QuickSettingsModel(Context context) {
@@ -404,6 +408,7 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
         refreshPowerMenuTile();
         refreshTorchTile();
         refreshRingerModeTile();
+        refreshScreenOffTile();
     }
 
     // Settings
@@ -1048,5 +1053,16 @@ class QuickSettingsModel implements BluetoothStateChangeCallback,
                 setRingerMode(RINGER_MODE_SILENT);
                 break;
         }
+
+    // Screen Off
+    void addScreenOffTile(QuickSettingsTileView view, RefreshCallback cb) {
+        mScreenOffTile = view;
+        mScreenOffCallback = cb;
+        refreshScreenOffTile();
+    }
+    void refreshScreenOffTile() {
+        Resources r = mContext.getResources();
+        mScreenOffState.label = r.getString(R.string.quick_settings_screen_off_label);
+        mScreenOffCallback.refreshView(mScreenOffTile, mScreenOffState);
     }
 }
