@@ -696,7 +696,7 @@ class QuickSettings {
                 @Override
                 public boolean onLongClick(View v) {
                     getService().animateCollapsePanels();
-                    Intent intent = new Intent(Intent.ACTION_POWERMENU_REBOOT);
+		    Intent intent = new Intent(Intent.ACTION_POWERMENU);
                     mContext.sendBroadcast(intent);
                     return true;
                 }

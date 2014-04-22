@@ -17,8 +17,6 @@
  
 package com.android.server.power;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import android.app.ActivityManagerNative;
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -82,8 +80,6 @@ public final class ShutdownThread extends Thread {
     
     private final Object mActionDoneSync = new Object();
     private boolean mActionDone;
-    private AtomicBoolean mModemDone = new AtomicBoolean(false);
-    private AtomicBoolean mMountServiceDone = new AtomicBoolean(false);
     private Context mContext;
     private PowerManager mPowerManager;
     private PowerManager.WakeLock mCpuWakeLock;
@@ -308,7 +304,7 @@ public final class ShutdownThread extends Thread {
 
     void actionDone() {
         synchronized (mActionDoneSync) {
-            mActionDone = mMountServiceDone.get() && mModemDone.get();
+            mActionDone = true;
             mActionDoneSync.notifyAll();
         }
     }
@@ -318,6 +314,13 @@ public final class ShutdownThread extends Thread {
      * Shuts off power regardless of radio and bluetooth state if the alloted time has passed.
      */
     public void run() {
+        BroadcastReceiver br = new BroadcastReceiver() {
+            @Override public void onReceive(Context context, Intent intent) {
+                // We don't allow apps to cancel this, so ignore the result.
+                actionDone();
+            }
+        };
+
         /*
          * Write a system property in case the system_server reboots before we
          * get to the actual hardware restart. If that happens, we'll retry at
@@ -335,14 +338,30 @@ public final class ShutdownThread extends Thread {
         if (mRebootSafeMode) {
             SystemProperties.set(REBOOT_SAFEMODE_PROPERTY, "1");
         }
-        // Shutdown radios.
-        shutdownRadios(MAX_RADIO_WAIT_TIME);
+
         Log.i(TAG, "Sending shutdown broadcast...");
 
         // First send the high-level shut down broadcast.
+        mActionDone = false;
         Intent intent = new Intent(Intent.ACTION_SHUTDOWN);
         intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
-        mContext.sendBroadcastAsUser(intent, UserHandle.ALL);
+        mContext.sendOrderedBroadcastAsUser(intent,
+                UserHandle.ALL, null, br, mHandler, 0, null, null);
+        
+        final long endTime = SystemClock.elapsedRealtime() + MAX_BROADCAST_TIME;
+        synchronized (mActionDoneSync) {
+            while (!mActionDone) {
+                long delay = endTime - SystemClock.elapsedRealtime();
+                if (delay <= 0) {
+                    Log.w(TAG, "Shutdown broadcast timed out");
+                    break;
+                }
+                try {
+                    mActionDoneSync.wait(delay);
+                } catch (InterruptedException e) {
+                }
+            }
+        }
 
         Log.i(TAG, "Shutting down activity manager...");
 
@@ -355,11 +374,13 @@ public final class ShutdownThread extends Thread {
             }
         }
 
+        // Shutdown radios.
+        shutdownRadios(MAX_RADIO_WAIT_TIME);
+
         // Shutdown MountService to ensure media is in a safe state
         IMountShutdownObserver observer = new IMountShutdownObserver.Stub() {
             public void onShutDownComplete(int statusCode) throws RemoteException {
                 Log.w(TAG, "Result code " + statusCode + " from MountService.shutdown");
-                mMountServiceDone.set(true);
                 actionDone();
             }
         };
@@ -367,6 +388,7 @@ public final class ShutdownThread extends Thread {
         Log.i(TAG, "Shutting down MountService");
 
         // Set initial variables and time out time.
+        mActionDone = false;
         final long endShutTime = SystemClock.elapsedRealtime() + MAX_SHUTDOWN_WAIT_TIME;
         synchronized (mActionDoneSync) {
             try {
@@ -493,14 +515,17 @@ public final class ShutdownThread extends Thread {
                     }
                     SystemClock.sleep(PHONE_STATE_POLL_SLEEP_MSEC);
                 }
-                if (!done[0]) {
-                    Log.w(TAG, "Timed out waiting for NFC, Radio and Bluetooth shutdown.");
-                }
-                mModemDone.set(true);
-                actionDone();
             }
         };
+
         t.start();
+        try {
+            t.join(timeout);
+        } catch (InterruptedException ex) {
+        }
+        if (!done[0]) {
+            Log.w(TAG, "Timed out waiting for NFC, Radio and Bluetooth shutdown.");
+        }
     }
 
     /**
