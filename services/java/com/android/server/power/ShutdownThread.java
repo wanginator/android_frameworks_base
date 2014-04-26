@@ -168,6 +168,7 @@ public final class ShutdownThread extends Thread {
                         });
             } else {
                 sConfirmDialog = new AlertDialog.Builder(context)
+                        .setIconAttribute(android.R.attr.alertDialogIcon)
                         .setTitle(mRebootSafeMode
                                 ? com.android.internal.R.string.reboot_safemode_title
                                 : com.android.internal.R.string.power_off)
