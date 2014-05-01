@@ -488,9 +488,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode {
         updateDisplaySize();
 
         mCurrUiThemeMode = mContext.getResources().getConfiguration().uiThemeMode;
-
-        mCurrUiThemeMode = mContext.getResources().getConfiguration().uiThemeMode;
-
         super.start(); // calls createAndAddWindows()
 
         addNavigationBar();
